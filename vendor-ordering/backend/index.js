@@ -2,35 +2,27 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const {PrismaClient} = require("@prisma/client");
+const path = require("path");
+const productRoutes = require(path.resolve(__dirname, "src/routes/product.routes.js"));
+const vendorRoutes = require(path.resolve(__dirname, "src/routes/vendor.routes.js"));
 
-const prisma = new PrismaClient();
+//console.log("VendorRoutes:", vendorRoutes);
+//console.log("Type:", typeof vendorRoutes);
+
 const app = express();
 
+//Registers
 app.use(cors());
 app.use(express.json());
+app.use("/vendor", vendorRoutes);
+app.use("/products", productRoutes);
 
 app.get("/", (req, res) => {
     res.send("Vendor Ordering Backend Running");
 });
 
-app.get("/vendor/:id/products", async (req, res) => {
-    const vendorId = parseInt(req.params.id);
-    console.log("Starting server...");
-    try{
-        const products = await prisma.vendorProduct.findMany({
-            where:{vendorId},
-            include:{
-                product:true,
-            },
-        });
-
-        res.json(products);
-    }
-    catch(error){
-        console.error(error);
-        res.status(500).json({error: "Something went wrong"});
-    }
+app.get("/products", (req, res) => {
+    res.send("Products root working");
 });
 
 const PORT = 5000;
@@ -38,3 +30,5 @@ const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+//console.log(typeof vendorRoutes);
