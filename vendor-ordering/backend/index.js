@@ -2,33 +2,45 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const path = require("path");
-const productRoutes = require(path.resolve(__dirname, "src/routes/product.routes.js"));
-const vendorRoutes = require(path.resolve(__dirname, "src/routes/vendor.routes.js"));
-
-//console.log("VendorRoutes:", vendorRoutes);
-//console.log("Type:", typeof vendorRoutes);
+const regionalRoutes = require("./src/routes/regional.routes");
+const vendorRoutes = require("./src/routes/vendor.routes");
+const productRoutes = require("./src/routes/product.routes");
+const questionRoutes = require("./src/routes/question.routes");
+const specificationRoutes = require("./src/routes/specification.routes");
+const orderRoutes = require("./src/routes/order.routes");
+const { errorHandler, notFoundHandler } = require("./src/middleware/error.middleware");
 
 const app = express();
 
-//Registers
 app.use(cors());
 app.use(express.json());
-app.use("/vendor", vendorRoutes);
-app.use("/products", productRoutes);
 
 app.get("/", (req, res) => {
-    res.send("Vendor Ordering Backend Running");
+  res.json({
+    message: "Vendor Ordering Backend Running",
+    version: "1.0.0",
+  });
 });
 
-app.get("/products", (req, res) => {
-    res.send("Products root working");
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-const PORT = 5000;
+app.use("/regionals", regionalRoutes);
+app.use("/vendors", vendorRoutes);
+app.use("/products", productRoutes);
+app.use("/questions", questionRoutes);
+app.use("/specifications", specificationRoutes);
+app.use("/orders", orderRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const PORT = Number(process.env.PORT) || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
-
-//console.log(typeof vendorRoutes);

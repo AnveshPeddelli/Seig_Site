@@ -4,8 +4,15 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+enum PaymentStatus{
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 generator client {
   provider = "prisma-client-js"
+
 }
 
 datasource db {
@@ -13,119 +20,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Regional {
-  id       Int      @id @default(autoincrement())
-  name     String
-  location String
-  vendors  Vendor[]
+model Region {
+  id      Int      @id @default(autoincrement())
+  name    String
+  vendors Vendor[]
 }
 
 model Vendor {
-  id       Int    @id @default(autoincrement())
-  name     String
-  location String
-  phone    String
+  id        Int       @id @default(autoincrement())
+  name      String
+  regionId  Int
+  region    Region    @relation(fields: [regionId], references: [id])
+  products  VendorProduct[]
+}
 
-  regional   Regional @relation(fields: [regionalId], references: [id])
-  regionalId Int
-
-  products VendorProduct[]
-  orders   Order[]
+model Product {
+  id        Int       @id @default(autoincrement())
+  name      String
+  price     Float
+  vendors   VendorProduct[]
 }
 
 model VendorProduct {
   id        Int     @id @default(autoincrement())
-  vendor    Vendor  @relation(fields: [vendorId], references: [id])
   vendorId  Int
+  productId Int
+
+  vendor    Vendor  @relation(fields: [vendorId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
-  productId Int
-  stock     Int
-}
-
-model Order {
-  id Int @id @default(autoincrement())
-
-  vendorId Int
-  vendor   Vendor @relation(fields: [vendorId], references: [id]) // ✅ ADD THIS
-
-  regionalId Int
-
-  customerName  String
-  customerPhone String
-
-  totalAmount Float
-  status      String
-
-  createdAt DateTime @default(now())
-
-  items    OrderItem[]
-  payments Payment[]
-}
-
-model OrderItem {
-  id        Int @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  quantity  Int
-
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-}
-
-model Payment {
-  id      Int    @id @default(autoincrement())
-  orderId Int
-  amount  Float
-  status  String // pending, success
-
-  paidTo String // regional / dealer
-
-  createdAt DateTime @default(now())
-
-  order Order @relation(fields: [orderId], references: [id])
-}
-
-model Question {
-  id      Int      @id @default(autoincrement())
-  text    String
-  options Option[]
-}
-
-model Option {
-  id   Int    @id @default(autoincrement())
-  text String
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
-
-  products Product[]
-}
-
-model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  price       Float
-
-  vendors     VendorProduct[]
-  orderItems  OrderItem[]
-
-  options     Option[]              // for questionnaire
-  specs       SpecificationValue[]  // ✅ ADD THIS
-}
-
-model Specification {
-  id    Int    @id @default(autoincrement())
-  name  String   // Voltage, Current, Power
-
-  values SpecificationValue[]
-}
-
-model SpecificationValue {
-  id              Int    @id @default(autoincrement())
-  value           String // "10V", "5A", "100W"
-
-  specificationId Int
-  specification   Specification @relation(fields: [specificationId], references: [id])
-
-  products        Product[]   // many-to-many
 }

@@ -1,143 +1,52 @@
-const { PrismaClient } = require("@prisma/client");
+const {PrismaClient} = require("@prisma/client");
 const prisma = new PrismaClient();
 
-async function main() {
+async function main()
+{
+    const vendor = await prisma.vendor.create({
+        data:{
+            name:"Vendor one",
+            location: "Bangalore",
+            phone:"9490290297",
+        },
+    });
 
-  // 1. Regional
-  const regional = await prisma.regional.create({
-    data: {
-      name: "South Region",
-      location: "Bangalore"
-    }
-  });
+    const product1 = await prisma.product.create({
+        data:{
+            name:"Cement Bag",
+            description: "Ultra Strong Cement",
+            price:450,
+            imageUrl: "https://via.placeholder.com/150",
+        },
+    });
 
-  // 2. Vendor
-  const vendor = await prisma.vendor.create({
-    data: {
-      name: "Vendor A",
-      location: "Bangalore",
-      phone: "9999999999",
-      regionalId: regional.id
-    }
-  });
+    const product2 = await prisma.product.create({
+        data:{
+            name: "Steel Rod",
+            description: "High Quality Steel Rod",
+            price: 700,
+            imageUrl: "https://via.placeholder.com/150",
+        },
+    });
 
-  // 3. Create Multiple Products
-  const productData = [
-    { name: "Battery 10V", price: 100 },
-    { name: "Battery 20V", price: 150 },
-    { name: "Pump 100W", price: 300 }
-  ];
+    await prisma.vendorProduct.createMany({
+        data:[
+            {vendorId: vendor.id, productId: product1.id, stock:100},
+            {vendorId: vendor.id, productId: product2.id, stock: 50},
+        ],
+    });
 
-  const products = [];
-
-  for (const p of productData) {
-    const product = await prisma.product.create({ data: p });
-    products.push(product);
-  }
-
-  const product1 = products[0];
-  const product2 = products[1];
-  const product3 = products[2];
-
-  // 4. VendorProduct mapping (IMPORTANT)
-  await prisma.vendorProduct.createMany({
-    data: [
-      { vendorId: vendor.id, productId: product1.id, stock: 10 },
-      { vendorId: vendor.id, productId: product2.id, stock: 5 },
-      { vendorId: vendor.id, productId: product3.id, stock: 7 }
-    ]
-  });
-
-  // 5. Specifications
-  const voltage = await prisma.specification.create({
-    data: { name: "Voltage" }
-  });
-
-  const current = await prisma.specification.create({
-    data: { name: "Current" }
-  });
-
-  // Spec values
-  const v10 = await prisma.specificationValue.create({
-    data: {
-      value: "10V",
-      specificationId: voltage.id
-    }
-  });
-
-  const v20 = await prisma.specificationValue.create({
-    data: {
-      value: "20V",
-      specificationId: voltage.id
-    }
-  });
-
-  const a5 = await prisma.specificationValue.create({
-    data: {
-      value: "5A",
-      specificationId: current.id
-    }
-  });
-
-  // Attach specs
-  await prisma.product.update({
-    where: { id: product1.id },
-    data: {
-      specs: {
-        connect: [{ id: v10.id }, { id: a5.id }]
-      }
-    }
-  });
-
-  await prisma.product.update({
-    where: { id: product2.id },
-    data: {
-      specs: {
-        connect: [{ id: v20.id }, { id: a5.id }]
-      }
-    }
-  });
-
-  await prisma.product.update({
-    where: { id: product3.id },
-    data: {
-      specs: {
-        connect: [{ id: v10.id }]
-      }
-    }
-  });
-
-  // 6. Questionnaire (FIXED)
-  await prisma.question.create({
-    data: {
-      text: "What do you need?",
-      options: {
-        create: [
-          {
-            text: "Battery",
-            products: {
-              connect: [
-                { id: product1.id },
-                { id: product2.id }
-              ]
-            }
-          },
-          {
-            text: "Pump",
-            products: {
-              connect: [
-                { id: product3.id }
-              ]
-            }
-          }
+    await prisma.region.createMany({
+        data:[
+            {name:"Bangalore"},
+            {name:"Hyderabad"},
+            {name:"Chennai"}
         ]
-      }
-    }
-  });
+    });
 
-  console.log("Seeded successfully 🚀");
+    console.log("Database seeded");
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+    .catch(console.error)
+    .finally(() => prisma.$disconnect());

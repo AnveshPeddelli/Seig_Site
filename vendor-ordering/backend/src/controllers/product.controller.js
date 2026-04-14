@@ -1,23 +1,45 @@
 const productService = require("../services/product.service");
+const asyncHandler = require("../utils/async-handler");
+const { ensureInt, optionalIntArray } = require("../utils/validation");
 
-const recommendProducts = async (req, res) => {
-  try {
-    const { optionIds } = req.body;
+const listProducts = asyncHandler(async (req, res) => {
+  const products = await productService.listProducts(req.query);
+  res.json(products);
+});
 
-    if (!optionIds || optionIds.length === 0) {
-      return res.status(400).json({ error: "optionIds required" });
-    }
+const getProduct = asyncHandler(async (req, res) => {
+  const product = await productService.getProduct(ensureInt(req.params.id, "productId"));
+  res.json(product);
+});
 
-    const products = await productService.recommendProducts(optionIds);
+const createProduct = asyncHandler(async (req, res) => {
+  const product = await productService.createProduct(req.body);
+  res.status(201).json(product);
+});
 
-    res.json(products);
+const updateProduct = asyncHandler(async (req, res) => {
+  const product = await productService.updateProduct(ensureInt(req.params.id, "productId"), req.body);
+  res.json(product);
+});
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-};
+const deleteProduct = asyncHandler(async (req, res) => {
+  await productService.deleteProduct(ensureInt(req.params.id, "productId"));
+  res.status(204).send();
+});
+
+const recommendProducts = asyncHandler(async (req, res) => {
+  const products = await productService.recommendProducts(
+    req.body.optionIds,
+    optionalIntArray(req.body.specValueIds, "specValueIds")
+  );
+  res.json(products);
+});
 
 module.exports = {
-  recommendProducts
+  listProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  recommendProducts,
 };
